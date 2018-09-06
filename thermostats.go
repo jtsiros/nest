@@ -34,7 +34,7 @@ const (
 	C tempScale = "C"
 )
 
-type values = map[string]interface{}
+type values map[string]interface{}
 
 // ThermostatService interacts with Thermostat devices to control and read device data.
 type ThermostatService service
