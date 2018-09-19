@@ -1,4 +1,5 @@
-# Nest
+Nest [![Coverage Status](https://coveralls.io/repos/github/jtsiros/nest/badge.svg?branch=master)](https://coveralls.io/github/jtsiros/nest?branch=master) [![GoDoc](https://godoc.org/github.com/jtsiros/nest?status.svg)](https://godoc.org/github.com/jtsiros/nest) ![Version](https://img.shields.io/badge/version-1.0.0-green.svg)
+====
 
 <p align="center">
   <img src="https://cdn.dribbble.com/users/1330537/screenshots/3878129/attachments/880649/hex_gopher_stand_.5.png" alt="Gopher Stand by: Kari Linder"/>
