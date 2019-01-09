@@ -36,7 +36,7 @@ type Stream struct {
 }
 
 // NewStream returns a new stream given a configuration and http client objects.
-func NewStream(cfg config.Config, client *http.Client) (*Stream, error) {
+func NewStream(cfg *config.Config, client *http.Client) (*Stream, error) {
 	u, err := url.Parse(cfg.APIURL)
 	if err != nil {
 		return nil, err

@@ -13,55 +13,88 @@ A Go library for Nest devices. This library provides basic support for Nest Came
 ## Usage
 
 ### Devices
+
+#### Existing Token
 ```go
 package main
 
 import (
-    "context"
-    "fmt"
-    "time"
-    
-    "github.com/jtsiros/nest"
-    "github.com/jtsiros/nest/auth"
-    "github.com/jtsiros/nest/config"
-    "golang.org/x/oauth2"
+	"context"
+	"fmt"
+	"log"
 
+	"github.com/jtsiros/nest"
+	"github.com/jtsiros/nest/auth"
+	"github.com/jtsiros/nest/config"
 )
 
 func main() {
+	// Interactive OAuth2 configuration
+	appConfig := config.Config{
+		APIURL: config.APIURL,
+	}
 
-    // Interactive OAuth2 configuration
-    appConfig := config.Config{
-        ClientID: "[CLIENT_ID]",
-        Secret:   "[SECRET]",
-        APIURL:   config.APIURL,
-    }
+	conf := auth.NewConfig(appConfig)
+	tok, err := auth.NewConfigWithToken("[TOKEN]").Token()
+	if err != nil {
+		log.Fatal(err)
+	}
+	client := conf.Client(context.Background(), tok)
 
-    conf := auth.NewConfig(appConfig)
-    url := conf.AuthCodeURL("STATE")
+	n, err := nest.NewClient(appConfig, client)
+	fmt.Println(n.Devices())
+}
 
-    fmt.Printf("Enter code from this authorization URL: %v\n", url)
-    
-    var code string
-    if _, err := fmt.Scan(&code); err != nil {
-        log.Info.Fatalln(err)
-    }
-    
-    ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-    token, err := conf.Exchange(ctx, code,
-        oauth2.SetAuthURLParam("client_id", appConfig.ClientID),
-        oauth2.SetAuthURLParam("client_secret", appConfig.Secret),
-    )
+```
 
-    // Or static token (previously authenticated)
-    tok, err := NewConfigWithToken(token).Token()
-    // ... error handling
-    token = tok.AccessToken
-    
-    client := conf.Client(ctx, token)
-    n, err := nest.NewClient(appConfig, client)
+#### No existing Token
+```go
+package main
 
-    fmt.Println(n.Devices())
+import (
+	"context"
+	"fmt"
+	"log"
+	"time"
+
+	"github.com/jtsiros/nest"
+	"github.com/jtsiros/nest/auth"
+	"github.com/jtsiros/nest/config"
+	"golang.org/x/oauth2"
+)
+
+func main() {
+	// Interactive OAuth2 configuration
+	appConfig := config.Config{
+		ClientID: "[CLIENT_ID]",
+		Secret:   "[SECRET]",
+		APIURL:   config.APIURL,
+	}
+
+	conf := auth.NewConfig(appConfig)
+	url := conf.AuthCodeURL("STATE")
+
+	fmt.Printf("Enter code from this authorization URL: %v\n", url)
+
+	var code string
+	if _, err := fmt.Scan(&code); err != nil {
+		log.Fatal(err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	token, err := conf.Exchange(ctx, code,
+		oauth2.SetAuthURLParam("client_id", appConfig.ClientID),
+		oauth2.SetAuthURLParam("client_secret", appConfig.Secret),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	client := conf.Client(ctx, token)
+	n, err := nest.NewClient(appConfig, client)
+
+	fmt.Println(n.Devices())
 }
 ```
 
