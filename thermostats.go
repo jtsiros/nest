@@ -54,8 +54,8 @@ func NewThermostatService(client *Client) *ThermostatService {
 // SetTargetTemperature changes the target temperature on the Thermostat.
 // See https://developers.nest.com/guides/thermostat-guide#target_temperature
 //
-func (svc *ThermostatService) SetTargetTemperature(deviceid string, scale string, target float64) error {
-	ttKey := fmt.Sprintf("target_temperature_%s", strings.ToLower(scale))
+func (svc *ThermostatService) SetTargetTemperature(deviceid string, scale tempScale, target float64) error {
+	ttKey := fmt.Sprintf("target_temperature_%s", strings.ToLower(string(scale)))
 	return svc.requestWithValues(http.MethodPut, svc.apiURL.String()+deviceid, values{ttKey: target})
 }
 
@@ -64,8 +64,8 @@ func (svc *ThermostatService) SetTargetTemperature(deviceid string, scale string
 // target_temperature_low(f|c)
 // target_temperature_high(f|c)
 //
-func (svc *ThermostatService) SetTargetTemperatureRange(deviceid string, scale string, low float64, high float64) error {
-	scale = strings.ToLower(scale)
+func (svc *ThermostatService) SetTargetTemperatureRange(deviceid string, scale tempScale, low float64, high float64) error {
+	s := strings.ToLower(string(scale))
 	values := map[string]interface{}{}
 
 	if low == 0.0 && high == 0.0 {
@@ -75,10 +75,10 @@ func (svc *ThermostatService) SetTargetTemperatureRange(deviceid string, scale s
 		return errors.New("low value must be less than or equal to high value")
 	}
 
-	lowKey := fmt.Sprintf("target_temperature_low_%s", scale)
+	lowKey := fmt.Sprintf("target_temperature_low_%s", s)
 	values[lowKey] = low
 
-	highKey := fmt.Sprintf("target_temperature_high_%s", scale)
+	highKey := fmt.Sprintf("target_temperature_high_%s", s)
 	values[highKey] = high
 
 	return svc.requestWithValues(http.MethodPut, svc.apiURL.String()+deviceid, values)

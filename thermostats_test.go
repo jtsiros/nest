@@ -40,7 +40,7 @@ func Test_SetTargetTemp(t *testing.T) {
 	}
 
 	for _, tc := range tt {
-		err := tc.s.SetTargetTemperature(tc.d.DeviceID, tc.d.TemperatureScale, tc.target)
+		err := tc.s.SetTargetTemperature(tc.d.DeviceID, tempScale(tc.d.TemperatureScale), tc.target)
 		if tc.err != "" {
 			assert.Equal(t, tc.err, err.Error())
 		}
@@ -63,7 +63,7 @@ func Test_SetTargetTempRange(t *testing.T) {
 	}
 
 	for _, tc := range tt {
-		err := tc.s.SetTargetTemperatureRange(tc.d.DeviceID, tc.d.TemperatureScale, tc.low, tc.high)
+		err := tc.s.SetTargetTemperatureRange(tc.d.DeviceID, tempScale(tc.d.TemperatureScale), tc.low, tc.high)
 		if tc.err != "" {
 			assert.Equal(t, tc.err, err.Error())
 		}
