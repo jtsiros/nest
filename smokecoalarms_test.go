@@ -7,14 +7,26 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var smokecoalarmResponse string
-
-func init() {
-	smokecoalarmResponse = readFileContents("testdata/smokecoalarm.json")
-}
+const smokeCoAlarmResponse = `{
+    "name": "Backyard (0305)",
+    "locale": "en-US",
+    "structure_id": "xYylA-lypQl5FHuJj2pY_JU3k-aKvEOT3oUEV_Nu8u85w_hO-s4xRg",
+    "software_version": "1.0.2rc2",
+    "where_id": "osefycV5UZDoYWGlEtfvxzW9zlfCGfY3qyS_RoiaCClLABYeI0vSKw",
+    "device_id": "2y2eUoaaXxBij4O1rxoiGfVfehTNCJA_",
+    "where_name": "Backyard",
+    "name_long": "Backyard Nest Protect (0305)",
+    "is_online": true,
+    "battery_health": "ok",
+    "co_alarm_state": "ok",
+    "smoke_alarm_state": "ok",
+    "ui_color_state": "green",
+    "is_manual_test_active": false,
+    "last_manual_test_time": "2014-10-24T21:13:56.000Z"
+}`
 
 func Test_GetSmokeCoAlarm(t *testing.T) {
-	c := newTestClient(smokecoalarmResponse, http.StatusOK)
+	c := newTestClient(smokeCoAlarmResponse, http.StatusOK)
 	s := NewSmokeCoAlarmService(c)
 	th, err := s.Get("2y2eUoaaXxBij4O1rxoiGfVfehTNCJA_")
 	if err != nil {
