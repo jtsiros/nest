@@ -1,4 +1,4 @@
-Nest [![Coverage Status](https://coveralls.io/repos/github/jtsiros/nest/badge.svg?branch=master)](https://coveralls.io/github/jtsiros/nest?branch=master) [![GoDoc](https://godoc.org/github.com/jtsiros/nest?status.svg)](https://godoc.org/github.com/jtsiros/nest) ![Version](https://img.shields.io/badge/version-1.0.0-green.svg)
+Nest  [![Build Status](https://travis-ci.org/jtsiros/nest.svg?branch=master)](https://travis-ci.org/jtsiros/nest) [![Coverage Status](https://coveralls.io/repos/github/jtsiros/nest/badge.svg?branch=master)](https://coveralls.io/github/jtsiros/nest?branch=master) [![GoDoc](https://godoc.org/github.com/jtsiros/nest?status.svg)](https://godoc.org/github.com/jtsiros/nest) ![Version](https://img.shields.io/badge/version-1.0.0-green.svg)
 ====
 
 <p align="center">
