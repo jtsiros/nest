@@ -1,7 +1,9 @@
 package nest
 
 import (
+	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -309,21 +311,93 @@ const apiResponse = `{
 `
 
 func Test_ListOfDevices(t *testing.T) {
+	tsSuccess := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintln(w, apiResponse)
+	}))
 
+	tsErr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		fmt.Fprintln(w, `{"message": "error msg"}`)
+	}))
+
+	tt := []struct {
+		s   *httptest.Server
+		err error
+	}{
+		{tsSuccess, nil},
+		{tsErr, errors.New("error msg")},
+	}
+
+	for _, tc := range tt {
+		api, err := NewClient(config.Config{APIURL: tc.s.URL}, tc.s.Client())
+		devices, err := api.Devices()
+		if tc.err != nil {
+			if err == nil {
+				t.Fatal("expected non nil Devices() response")
+			}
+			assert.Equal(t, tc.err.Error(), err.Error())
+		} else {
+			assert.True(t, len(devices.Thermostats) > 0, "should return at least one thermostat")
+		}
+	}
+}
+
+func Test_NewClientAPIUrl(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, apiResponse)
 	}))
 
-	api, err := NewClient(config.Config{APIURL: ts.URL}, ts.Client())
-	if err != nil {
-		assert.Fail(t, err.Error())
-		return
+	tt := []struct {
+		url string
+		err error
+	}{
+		{"http://localhost", nil},
+		{"()://", errors.New("Not a properly formed API URL: parse ()://: first path segment in URL cannot contain colon")},
 	}
 
-	devices, err := api.Devices()
-	if err != nil {
-		assert.Fail(t, err.Error())
-		return
+	for _, tc := range tt {
+		_, err := NewClient(config.Config{APIURL: tc.url}, ts.Client())
+		if tc.err != nil {
+			if tc.err.Error() != err.Error() {
+				t.Fatalf("expected client error [%v], got [%v]", tc.err, err)
+			}
+		}
 	}
-	assert.True(t, len(devices.Thermostats) > 0, "should return at least one thermostat")
+}
+
+func Test_NewRequest(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, apiResponse)
+	}))
+
+	tt := []struct {
+		method, path string
+		body         interface{}
+		expectedBody string
+		err          error
+	}{
+		{"GET", "/test", map[string]string{"key": "value"}, "{\"key\":\"value\"}\n", nil},
+		{"GET", "/test", map[string]string{}, "{}\n", nil},
+		{"GET", "/test", nil, "", nil},
+		{"POST", "/test", map[string]string{}, "{}\n", nil},
+		{"()", "/test", nil, "", errors.New("net/http: invalid method \"()\"")},
+	}
+
+	c, _ := NewClient(config.Config{APIURL: ts.URL}, ts.Client())
+
+	for _, tc := range tt {
+		req, err := c.newRequest(tc.method, tc.path, tc.body)
+		if tc.err != nil {
+			if tc.err.Error() != err.Error() {
+				t.Fatalf("expected client error [%v], got [%v]", tc.err, err)
+			}
+		} else {
+			if req.Body != nil {
+				b, _ := ioutil.ReadAll(req.Body)
+				assert.Equal(t, tc.expectedBody, string(b))
+			}
+			assert.Equal(t, tc.method, req.Method)
+		}
+	}
 }

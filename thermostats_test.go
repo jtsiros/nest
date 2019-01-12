@@ -1,6 +1,7 @@
 package nest
 
 import (
+	"errors"
 	"net/http"
 	"testing"
 
@@ -73,15 +74,20 @@ func Test_GetThermostat(t *testing.T) {
 
 func Test_SetTargetTemp(t *testing.T) {
 
+	d := &device.Thermostat{
+		DeviceID:         "12345abcd",
+		TemperatureScale: "F",
+	}
+
 	tt := []struct {
 		target float64
 		s      *ThermostatService
 		d      *device.Thermostat
 		err    string
 	}{
-		{76.0, NewThermostatService(newTestClient("76", http.StatusOK)), &device.Thermostat{DeviceID: "12345abcd", TemperatureScale: "F"}, ""},
-		{91.0, NewThermostatService(newTestClient("{\"message\": \"Temperature F value is too high: 91\"}", http.StatusBadRequest)), &device.Thermostat{DeviceID: "12345abcd", TemperatureScale: "F"}, "Temperature F value is too high: 91"},
-		{10.0, NewThermostatService(newTestClient("{\"message\": \"Temperature F value is too low: 10\"}", http.StatusBadRequest)), &device.Thermostat{DeviceID: "12345abcd", TemperatureScale: "F"}, "Temperature F value is too low: 10"},
+		{76.0, NewThermostatService(newTestClient("76", http.StatusOK)), d, ""},
+		{91.0, NewThermostatService(newTestClient("{\"message\": \"Temperature F value is too high: 91\"}", http.StatusBadRequest)), d, "Temperature F value is too high: 91"},
+		{10.0, NewThermostatService(newTestClient("{\"message\": \"Temperature F value is too low: 10\"}", http.StatusBadRequest)), d, "Temperature F value is too low: 10"},
 	}
 
 	for _, tc := range tt {
@@ -94,6 +100,11 @@ func Test_SetTargetTemp(t *testing.T) {
 
 func Test_SetTargetTempRange(t *testing.T) {
 
+	d := &device.Thermostat{
+		DeviceID:         "12345abcd",
+		TemperatureScale: "F",
+	}
+
 	tt := []struct {
 		low  float64
 		high float64
@@ -101,10 +112,10 @@ func Test_SetTargetTempRange(t *testing.T) {
 		d    *device.Thermostat
 		err  string
 	}{
-		{76.0, 80.0, NewThermostatService(newTestClient("76", http.StatusOK)), &device.Thermostat{DeviceID: "12345abcd", TemperatureScale: "F"}, ""},
-		{80.0, 80.0, NewThermostatService(newTestClient("", http.StatusOK)), &device.Thermostat{DeviceID: "12345abcd", TemperatureScale: "F"}, ""},
-		{80.0, 76.0, NewThermostatService(newTestClient("", http.StatusBadRequest)), &device.Thermostat{DeviceID: "12345abcd", TemperatureScale: "F"}, "low value must be less than or equal to high value"},
-		{0.0, 0.0, NewThermostatService(newTestClient("", http.StatusBadRequest)), &device.Thermostat{DeviceID: "12345abcd", TemperatureScale: "F"}, "either low or high target must be set above 0"},
+		{76.0, 80.0, NewThermostatService(newTestClient("76", http.StatusOK)), d, ""},
+		{80.0, 80.0, NewThermostatService(newTestClient("", http.StatusOK)), d, ""},
+		{80.0, 76.0, NewThermostatService(newTestClient("", http.StatusBadRequest)), d, "low value must be less than or equal to high value"},
+		{0.0, 0.0, NewThermostatService(newTestClient("", http.StatusBadRequest)), d, "either low or high target must be set above 0"},
 	}
 
 	for _, tc := range tt {
@@ -216,4 +227,45 @@ func Test_SetTempScale(t *testing.T) {
 			assert.Equal(t, tc.err, err.Error())
 		}
 	}
+}
+
+func Test_requestWithValues(t *testing.T) {
+
+	tt := []struct {
+		method string
+		path   string
+		values map[string]interface{}
+		s      *ThermostatService
+		err    error
+	}{
+		{http.MethodGet, "/test", nil, NewThermostatService(newTestClient("", http.StatusOK)), nil},
+		{"()", "/test", nil, NewThermostatService(newTestClient("", http.StatusOK)), errors.New("net/http: invalid method \"()\"")},
+	}
+
+	for _, tc := range tt {
+		err := tc.s.requestWithValues(tc.method, tc.path, tc.values)
+		if tc.err != nil {
+			isNotNil := assert.NotNil(t, err)
+			if isNotNil {
+				assert.Equal(t, tc.err.Error(), err.Error())
+			}
+		}
+	}
+}
+
+func Test_StreamThermostatDevice(t *testing.T) {
+	cl := newTestClient("event: 123\ndata: 456\n", http.StatusOK)
+	ts := NewThermostatService(cl)
+	s, err := ts.Stream("12345")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	c, err := s.Open()
+	if err != nil {
+		t.Fatal(err)
+	}
+	event := <-c
+	assert.Equal(t, "123", event.name)
+	assert.Equal(t, "456", event.data)
 }
