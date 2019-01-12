@@ -36,3 +36,20 @@ func Test_GetSmokeCoAlarm(t *testing.T) {
 
 	assert.Equal(t, "2y2eUoaaXxBij4O1rxoiGfVfehTNCJA_", th.DeviceID, "deviceIDs should match")
 }
+
+func Test_StreamSmokeCoAlarmDevice(t *testing.T) {
+	cl := newTestClient("event: 123\ndata: 456\n", http.StatusOK)
+	ts := NewSmokeCoAlarmService(cl)
+	s, err := ts.Stream("12345")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	c, err := s.Open()
+	if err != nil {
+		t.Fatal(err)
+	}
+	event := <-c
+	assert.Equal(t, "123", event.name)
+	assert.Equal(t, "456", event.data)
+}

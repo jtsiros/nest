@@ -88,6 +88,9 @@ func readEvents(events chan<- Event, resp *http.Response) {
 }
 
 func extract(line []byte, pfx []byte) string {
+	if len(line) == 0 {
+		return ""
+	}
 	pfxIdx := len(pfx) + 1
 	endOfLineIdx := len(line) - 1
 	return string(line[pfxIdx:endOfLineIdx])
