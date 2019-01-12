@@ -40,6 +40,6 @@ func (svc *CameraService) Get(deviceid string) (*device.Camera, error) {
 func (svc *CameraService) Stream(deviceID string) (*Stream, error) {
 	rel := &url.URL{Path: fmt.Sprintf("/devices/cameras/%s", deviceID)}
 	return NewStream(&config.Config{
-		APIURL: rel.String(),
+		APIURL: svc.client.baseURL.ResolveReference(rel).String(),
 	}, svc.client.httpClient)
 }
