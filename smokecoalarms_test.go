@@ -50,6 +50,6 @@ func Test_StreamSmokeCoAlarmDevice(t *testing.T) {
 		t.Fatal(err)
 	}
 	event := <-c
-	assert.Equal(t, "123", event.name)
-	assert.Equal(t, "456", event.data)
+	assert.Equal(t, []byte("123"), event.name)
+	assert.Equal(t, []byte("456"), event.data)
 }

@@ -18,11 +18,11 @@ func Test_extract(t *testing.T) {
 	tt := []struct {
 		line     []byte
 		prefix   []byte
-		expected string
+		expected []byte
 	}{
-		{[]byte("data: this is my data\n"), []byte("data:"), "this is my data"},
-		{[]byte("event: update\n"), []byte("event:"), "update"},
-		{[]byte(""), []byte("event:"), ""},
+		{[]byte("data: this is my data\n"), []byte("data:"), []byte("this is my data")},
+		{[]byte("event: update\n"), []byte("event:"), []byte("update")},
+		{[]byte(""), []byte("event:"), nil},
 	}
 
 	for _, tc := range tt {
@@ -43,10 +43,10 @@ func Test_readEvents(t *testing.T) {
 	tt := []struct {
 		req                        func(http.ResponseWriter, *http.Request)
 		rec                        *httptest.ResponseRecorder
-		expectedName, expectedData string
+		expectedName, expectedData []byte
 	}{
-		{handlerSuccess, httptest.NewRecorder(), "this is an event", "this is data"},
-		{handlerEmpty, httptest.NewRecorder(), "", ""},
+		{handlerSuccess, httptest.NewRecorder(), []byte("this is an event"), []byte("this is data")},
+		{handlerEmpty, httptest.NewRecorder(), nil, nil},
 	}
 
 	for _, tc := range tt {
