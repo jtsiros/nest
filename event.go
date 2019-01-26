@@ -3,13 +3,16 @@ package nest
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/jtsiros/nest/config"
+	"github.com/jtsiros/nest/device"
 )
 
 const (
@@ -22,10 +25,78 @@ var (
 	dataPfx  = []byte(data)
 )
 
+// EventsType describes the supported event types (usually based on device)
+type EventsType string
+
+// all the event types
+const (
+	Thermostats   EventsType = "thermostats"
+	SmokeCoAlarms EventsType = "smoke_co_alarms"
+	Cameras       EventsType = "cameras"
+	KeepAlive     EventsType = "keep-alive"
+	EventError    EventsType = "error"
+)
+
 // Event represents a response when changes occur in structure or device data.
 type Event struct {
-	name string
-	data string
+	name []byte
+	data []byte
+}
+
+func (e Event) String() string {
+	return fmt.Sprintf("Event name: %v, Data: %v", string(e.name), string(e.data))
+}
+
+type eventPath struct {
+	Path string `json:"path"`
+}
+
+type thermostatData struct {
+	Data *device.Thermostat `json:"data"`
+}
+type smokeCoAlarmData struct {
+	Data *device.SmokeAlarm `json:"data"`
+}
+type cameraData struct {
+	Data *device.Camera `json:"data"`
+}
+
+// GetEvent returns the device data along with the type for type casting
+// Returns the device type, device id, data, error
+func (e Event) GetEvent() (EventsType, string, interface{}, error) {
+	if string(e.name) == string(KeepAlive) {
+		return KeepAlive, "", nil, nil
+	}
+
+	var eventPathBuf eventPath
+	err := json.Unmarshal(e.data, &eventPathBuf)
+	if err != nil {
+		return EventError, "", nil, fmt.Errorf("path unmarshal error: %v", err)
+	}
+
+	// /devices/thermostats/<id>
+	eventParsed := strings.Split(eventPathBuf.Path, "/")
+	deviceID := eventParsed[3]
+	eventType := EventsType(eventParsed[2])
+
+	var deviceData interface{}
+	switch eventType {
+	case Thermostats:
+		thermostatDataBuf := thermostatData{}
+		json.Unmarshal(e.data, &thermostatDataBuf)
+		deviceData = thermostatDataBuf.Data
+	case SmokeCoAlarms:
+		smokeCoAlarmDataBuf := smokeCoAlarmData{}
+		json.Unmarshal(e.data, &smokeCoAlarmDataBuf)
+		deviceData = smokeCoAlarmDataBuf.Data
+	case Cameras:
+		cameraDataBuf := cameraData{}
+		json.Unmarshal(e.data, &cameraDataBuf)
+		deviceData = cameraDataBuf.Data
+	default:
+		return EventError, "", nil, fmt.Errorf("unhandled device type: %v", eventType)
+	}
+	return eventType, deviceID, deviceData, nil
 }
 
 // Stream represents an open connection to the Nest APIs for device and structure changes.
@@ -71,7 +142,6 @@ func readEvents(events chan<- Event, resp *http.Response) {
 			break
 		}
 		if err == io.EOF {
-			log.Printf("got EOF reading response: %v", err)
 			break
 		}
 
@@ -87,13 +157,13 @@ func readEvents(events chan<- Event, resp *http.Response) {
 	close(events)
 }
 
-func extract(line []byte, pfx []byte) string {
+func extract(line []byte, pfx []byte) []byte {
 	if len(line) == 0 {
-		return ""
+		return nil
 	}
 	pfxIdx := len(pfx) + 1
 	endOfLineIdx := len(line) - 1
-	return string(line[pfxIdx:endOfLineIdx])
+	return line[pfxIdx:endOfLineIdx]
 }
 
 // createConnection opens an event-stream to the Nest API to receive events from devices.
