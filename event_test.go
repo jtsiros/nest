@@ -15,6 +15,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func createHandler(body string) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		io.WriteString(w, body)
+	}
+}
+
 func Test_extract(t *testing.T) {
 
 	tt := []struct {
@@ -34,21 +40,19 @@ func Test_extract(t *testing.T) {
 }
 
 func Test_readEvents(t *testing.T) {
+	handlerSuccess := createHandler("event: thermostats\ndata: {\"path\":\"/devices/thermostats/1234\",\"data\":{\"device_id\":\"1234\"}}\n")
+	handlerEmpty := createHandler("")
+	handlerKeepAlive := createHandler("event: keep-alive\ndata: \n")
 
-	handlerSuccess := func(w http.ResponseWriter, r *http.Request) {
-		io.WriteString(w, "event: this is an event\ndata: this is data\n")
-	}
-	handlerEmpty := func(w http.ResponseWriter, r *http.Request) {
-		io.WriteString(w, "")
-	}
 	req := httptest.NewRequest("GET", "http://localhost/", nil)
 	tt := []struct {
 		req                        func(http.ResponseWriter, *http.Request)
 		rec                        *httptest.ResponseRecorder
 		expectedName, expectedData []byte
 	}{
-		{handlerSuccess, httptest.NewRecorder(), []byte("this is an event"), []byte("this is data")},
+		{handlerSuccess, httptest.NewRecorder(), []byte("thermostats"), []byte("{\"path\":\"/devices/thermostats/1234\",\"data\":{\"device_id\":\"1234\"}}")},
 		{handlerEmpty, httptest.NewRecorder(), nil, nil},
+		{handlerKeepAlive, httptest.NewRecorder(), []byte("keep-alive"), []byte{}},
 	}
 
 	for _, tc := range tt {
@@ -61,6 +65,7 @@ func Test_readEvents(t *testing.T) {
 
 		assert.Equal(t, tc.expectedName, event.name)
 		assert.Equal(t, tc.expectedData, event.data)
+
 	}
 }
 
@@ -70,6 +75,9 @@ func Test_getEvent(t *testing.T) {
 	camera := createHandler("event: cameras\ndata: {\"path\":\"/devices/cameras/1234\",\"data\":{\"device_id\":\"1234\"}}\n")
 	keepAlive := createHandler("event: keep-alive\ndata: \n")
 	eventError := createHandler("event: error\ndata: \n")
+	unkown := createHandler("event: newdevice\ndata: {\"path\":\"/devices/newdevice/1234\",\"data\":{\"device_id\":\"1234\"}}\n")
+	invalidPath := createHandler("event: cameras\ndata: {\"path\"\n")
+	nullData := createHandler("event: thermostats\ndata: {\"path\":\"/devices/thermostats/1234\",\"data\":null}\n")
 
 	req := httptest.NewRequest("GET", "http://localhost/", nil)
 	tt := []struct {
@@ -84,6 +92,9 @@ func Test_getEvent(t *testing.T) {
 		{camera, httptest.NewRecorder(), "1234", Cameras, reflect.TypeOf(&device.Camera{})},
 		{keepAlive, httptest.NewRecorder(), "", KeepAlive, nil},
 		{eventError, httptest.NewRecorder(), "", EventError, nil},
+		{unkown, httptest.NewRecorder(), "", EventError, nil},
+		{invalidPath, httptest.NewRecorder(), "", EventError, nil},
+		{nullData, httptest.NewRecorder(), "1234", Thermostats, reflect.TypeOf(&device.Thermostat{})},
 	}
 
 	for _, tc := range tt {
@@ -93,7 +104,7 @@ func Test_getEvent(t *testing.T) {
 		events := make(chan Event)
 		go readEvents(events, resp)
 		event := <-events
-		et, deviceID, device, _ := event.GetEvent(false)
+		et, deviceID, device, _ := event.GetEvent()
 		assert.Equal(t, tc.deviceID, deviceID)
 		assert.Equal(t, tc.deviceType, et)
 		assert.Equal(t, tc.eventType, reflect.TypeOf(device))
