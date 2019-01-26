@@ -61,18 +61,9 @@ type cameraData struct {
 	Data *device.Camera `json:"data"`
 }
 
-func prettyPrinter(eventType EventsType, v interface{}) (err error) {
-	fmt.Printf("Event type: %v\n", eventType)
-	b, err := json.MarshalIndent(v, "", "  ")
-	if err == nil {
-		fmt.Println(string(b))
-	}
-	return
-}
-
 // GetEvent returns the device data along with the type for type casting
 // Returns the device type, device id, data, error
-func (e Event) GetEvent(print bool) (EventsType, string, interface{}, error) {
+func (e Event) GetEvent() (EventsType, string, interface{}, error) {
 	if string(e.name) == string(KeepAlive) {
 		return KeepAlive, "", nil, nil
 	}
@@ -92,25 +83,18 @@ func (e Event) GetEvent(print bool) (EventsType, string, interface{}, error) {
 	switch eventType {
 	case Thermostats:
 		thermostatDataBuf := thermostatData{}
-		err = json.Unmarshal(e.data, &thermostatDataBuf)
+		json.Unmarshal(e.data, &thermostatDataBuf)
 		deviceData = thermostatDataBuf.Data
 	case SmokeCoAlarms:
 		smokeCoAlarmDataBuf := smokeCoAlarmData{}
-		err = json.Unmarshal(e.data, &smokeCoAlarmDataBuf)
+		json.Unmarshal(e.data, &smokeCoAlarmDataBuf)
 		deviceData = smokeCoAlarmDataBuf.Data
 	case Cameras:
 		cameraDataBuf := cameraData{}
-		err = json.Unmarshal(e.data, &cameraDataBuf)
+		json.Unmarshal(e.data, &cameraDataBuf)
 		deviceData = cameraDataBuf.Data
 	default:
 		return EventError, "", nil, fmt.Errorf("unhandled device type: %v", eventType)
-	}
-	if err != nil {
-		return EventError, "", nil, fmt.Errorf("data unmarshal error: %v", err)
-	}
-
-	if print {
-		prettyPrinter(eventType, deviceData)
 	}
 	return eventType, deviceID, deviceData, nil
 }
@@ -158,7 +142,6 @@ func readEvents(events chan<- Event, resp *http.Response) {
 			break
 		}
 		if err == io.EOF {
-			log.Printf("got EOF reading response: %v", err)
 			break
 		}
 
