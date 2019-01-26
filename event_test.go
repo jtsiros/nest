@@ -7,9 +7,11 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 
 	"github.com/jtsiros/nest/config"
+	"github.com/jtsiros/nest/device"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -59,6 +61,42 @@ func Test_readEvents(t *testing.T) {
 
 		assert.Equal(t, tc.expectedName, event.name)
 		assert.Equal(t, tc.expectedData, event.data)
+	}
+}
+
+func Test_getEvent(t *testing.T) {
+	thermostat := createHandler("event: thermostats\ndata: {\"path\":\"/devices/thermostats/1234\",\"data\":{\"device_id\":\"1234\"}}\n")
+	smokeCoAlarm := createHandler("event: smoke_co_alarms\ndata: {\"path\":\"/devices/smoke_co_alarms/1234\",\"data\":{\"device_id\":\"1234\"}}\n")
+	camera := createHandler("event: cameras\ndata: {\"path\":\"/devices/cameras/1234\",\"data\":{\"device_id\":\"1234\"}}\n")
+	keepAlive := createHandler("event: keep-alive\ndata: \n")
+	eventError := createHandler("event: error\ndata: \n")
+
+	req := httptest.NewRequest("GET", "http://localhost/", nil)
+	tt := []struct {
+		req        func(http.ResponseWriter, *http.Request)
+		rec        *httptest.ResponseRecorder
+		deviceID   string
+		deviceType EventsType
+		eventType  reflect.Type
+	}{
+		{thermostat, httptest.NewRecorder(), "1234", Thermostats, reflect.TypeOf(&device.Thermostat{})},
+		{smokeCoAlarm, httptest.NewRecorder(), "1234", SmokeCoAlarms, reflect.TypeOf(&device.SmokeAlarm{})},
+		{camera, httptest.NewRecorder(), "1234", Cameras, reflect.TypeOf(&device.Camera{})},
+		{keepAlive, httptest.NewRecorder(), "", KeepAlive, nil},
+		{eventError, httptest.NewRecorder(), "", EventError, nil},
+	}
+
+	for _, tc := range tt {
+		tc.req(tc.rec, req)
+		resp := tc.rec.Result()
+
+		events := make(chan Event)
+		go readEvents(events, resp)
+		event := <-events
+		et, deviceID, device, _ := event.GetEvent(false)
+		assert.Equal(t, tc.deviceID, deviceID)
+		assert.Equal(t, tc.deviceType, et)
+		assert.Equal(t, tc.eventType, reflect.TypeOf(device))
 	}
 }
 
