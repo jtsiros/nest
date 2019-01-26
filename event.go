@@ -34,7 +34,7 @@ const (
 	SmokeCoAlarms EventsType = "smoke_co_alarms"
 	Cameras       EventsType = "cameras"
 	KeepAlive     EventsType = "keep-alive"
-	EventError    EventsType = "ERROR"
+	EventError    EventsType = "error"
 )
 
 // Event represents a response when changes occur in structure or device data.
