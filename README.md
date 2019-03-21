@@ -5,7 +5,14 @@ Nest  [![Build Status](https://travis-ci.org/jtsiros/nest.svg?branch=master)](ht
   <img src="https://cdn.dribbble.com/users/1330537/screenshots/3878129/attachments/880649/hex_gopher_stand_.5.png" alt="Gopher Stand by: Kari Linder"/>
 </p>
 
-A Go library for Nest devices. This library provides basic support for Nest Cameras (work-in-progress), Thermostats, and SmokeCoAlarms. There is support for integrating golang OAuth2.0 support into the HTTP client and is expected when constructing a new client. 
+A Go library for Nest devices. This library provides basic support for Nest Cameras (work-in-progress), Thermostats, and SmokeCoAlarms. There is support for integrating golang OAuth2.0 support into the HTTP client and is expected when constructing a new client.
+
+## Author
+Jon Tsiros
+
+Want to support me? 
+
+<a href='https://ko-fi.com/X8X4SDNW' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://az743702.vo.msecnd.net/cdn/kofi2.png?v=0' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
 
 ## Installation
     go get github.com/jtsiros/nest
@@ -122,8 +129,6 @@ camera, err := n.Cameras.Get("[DEVICE_ID]")
 // ... error handling
 fmt.Println(camera.IsStreaming)
 ```
-## Author
-Jon Tsiros
 
 ## Credits
 
