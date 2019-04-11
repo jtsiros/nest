@@ -42,8 +42,7 @@ type ThermostatService service
 
 // NewThermostatService creates a new service to interact with Thermostats.
 func NewThermostatService(client *Client) *ThermostatService {
-	rel := &url.URL{Path: "/devices/thermostats"}
-	u := client.baseURL.ResolveReference(rel)
+	u := &url.URL{Path: "/devices/thermostats"}
 
 	return &ThermostatService{
 		client: client,
@@ -91,7 +90,7 @@ func (svc *ThermostatService) SetTargetTemperatureRange(deviceid string, scale t
 // See https://developers.nest.com/reference/api-thermostat#hvac_mode
 //
 func (svc *ThermostatService) SetHVACMode(deviceid string, state hvacMode) error {
-	return svc.requestWithValues(http.MethodPut, svc.apiURL.String()+deviceid, values{"hvac_mode": state})
+	return svc.requestWithValues(http.MethodPut, deviceid, values{"hvac_mode": state})
 }
 
 // SetFanTimerDuration specifies the length of time (in minutes) that the fan is set to run.
@@ -136,14 +135,16 @@ func (svc *ThermostatService) Get(deviceid string) (*device.Thermostat, error) {
 // https://developers.nest.com/guides/api/rest-streaming-guide
 //
 func (svc *ThermostatService) Stream(deviceID string) (*Stream, error) {
-	rel := &url.URL{Path: fmt.Sprintf("/devices/thermostats/%s", deviceID)}
+	rel := &url.URL{Path: fmt.Sprintf("%s/%s", svc.apiURL, deviceID)}
 	return NewStream(&config.Config{
 		APIURL: svc.client.baseURL.ResolveReference(rel).String(),
 	}, svc.client.httpClient)
 }
 
 func (svc *ThermostatService) requestWithValues(method string, path string, values map[string]interface{}) error {
-	req, err := svc.client.newRequest(method, path, values)
+	url := fmt.Sprintf("%s/%s", svc.apiURL.String(), path)
+	req, err := svc.client.newRequest(method, url, values)
+
 	if err != nil {
 		return err
 	}
