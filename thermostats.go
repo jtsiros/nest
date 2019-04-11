@@ -100,7 +100,7 @@ func (svc *ThermostatService) SetFanTimerDuration(deviceid string, duration int)
 	if duration%15 != 0 {
 		return errors.New("duration must be a multiple of 15")
 	}
-	return svc.requestWithValues(http.MethodPut, svc.apiURL.String()+deviceid, values{"fan_timer_duration": duration})
+	return svc.requestWithValues(http.MethodPut, deviceid, values{"fan_timer_duration": duration})
 }
 
 // GetFanTimerActive indicates if the fan timer is engaged. This is typically set with SetFanTimerDuration
@@ -113,12 +113,12 @@ func (svc *ThermostatService) GetFanTimerActive(deviceid string) error {
 // SetLabel sets a custom label for a thermostat.
 // See https://developers.nest.com/reference/api-thermostat#label
 func (svc *ThermostatService) SetLabel(deviceid string, label string) error {
-	return svc.requestWithValues(http.MethodPut, svc.apiURL.String()+deviceid, values{"label": label})
+	return svc.requestWithValues(http.MethodPut, deviceid, values{"label": label})
 }
 
 // SetTemperatureScale sets the temperature scale display to F or C.
 func (svc *ThermostatService) SetTemperatureScale(deviceid string, scale tempScale) error {
-	return svc.requestWithValues(http.MethodPut, svc.apiURL.String()+deviceid, values{"temperature_scale": scale})
+	return svc.requestWithValues(http.MethodPut, deviceid, values{"temperature_scale": scale})
 }
 
 // Get fetches an updated thermostat object given a deviceID.
