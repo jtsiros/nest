@@ -16,8 +16,7 @@ type CameraService service
 
 // NewCameraService creates a new service.
 func NewCameraService(client *Client) *CameraService {
-	rel := &url.URL{Path: "/devices/cameras"}
-	u := client.baseURL.ResolveReference(rel)
+	u := &url.URL{Path: "/devices/cameras"}
 
 	return &CameraService{
 		client: client,
@@ -38,7 +37,7 @@ func (svc *CameraService) Get(deviceid string) (*device.Camera, error) {
 // https://developers.nest.com/guides/api/rest-streaming-guide
 //
 func (svc *CameraService) Stream(deviceID string) (*Stream, error) {
-	rel := &url.URL{Path: fmt.Sprintf("/devices/cameras/%s", deviceID)}
+	rel := &url.URL{Path: fmt.Sprintf("%s/%s", svc.apiURL.String(), deviceID)}
 	return NewStream(&config.Config{
 		APIURL: svc.client.baseURL.ResolveReference(rel).String(),
 	}, svc.client.httpClient)
