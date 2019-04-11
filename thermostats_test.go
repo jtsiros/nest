@@ -80,14 +80,14 @@ func Test_SetTargetTemp(t *testing.T) {
 	}
 
 	tt := []struct {
-		target float64
+		target int
 		s      *ThermostatService
 		d      *device.Thermostat
 		err    string
 	}{
-		{76.0, NewThermostatService(newTestClient("76", http.StatusOK)), d, ""},
-		{91.0, NewThermostatService(newTestClient("{\"message\": \"Temperature F value is too high: 91\"}", http.StatusBadRequest)), d, "Temperature F value is too high: 91"},
-		{10.0, NewThermostatService(newTestClient("{\"message\": \"Temperature F value is too low: 10\"}", http.StatusBadRequest)), d, "Temperature F value is too low: 10"},
+		{76, NewThermostatService(newTestClient("76", http.StatusOK)), d, ""},
+		{91, NewThermostatService(newTestClient("{\"message\": \"Temperature F value is too high: 91\"}", http.StatusBadRequest)), d, "Temperature F value is too high: 91"},
+		{10, NewThermostatService(newTestClient("{\"message\": \"Temperature F value is too low: 10\"}", http.StatusBadRequest)), d, "Temperature F value is too low: 10"},
 	}
 
 	for _, tc := range tt {
@@ -106,16 +106,16 @@ func Test_SetTargetTempRange(t *testing.T) {
 	}
 
 	tt := []struct {
-		low  float64
-		high float64
+		low  int
+		high int
 		s    *ThermostatService
 		d    *device.Thermostat
 		err  string
 	}{
-		{76.0, 80.0, NewThermostatService(newTestClient("76", http.StatusOK)), d, ""},
-		{80.0, 80.0, NewThermostatService(newTestClient("", http.StatusOK)), d, ""},
-		{80.0, 76.0, NewThermostatService(newTestClient("", http.StatusBadRequest)), d, "low value must be less than or equal to high value"},
-		{0.0, 0.0, NewThermostatService(newTestClient("", http.StatusBadRequest)), d, "either low or high target must be set above 0"},
+		{76, 80, NewThermostatService(newTestClient("76", http.StatusOK)), d, ""},
+		{80, 80, NewThermostatService(newTestClient("", http.StatusOK)), d, ""},
+		{80, 76, NewThermostatService(newTestClient("", http.StatusBadRequest)), d, "low value must be less than or equal to high value"},
+		{0, 0, NewThermostatService(newTestClient("", http.StatusBadRequest)), d, "either low or high target must be set above 0"},
 	}
 
 	for _, tc := range tt {

@@ -42,8 +42,7 @@ type ThermostatService service
 
 // NewThermostatService creates a new service to interact with Thermostats.
 func NewThermostatService(client *Client) *ThermostatService {
-	rel := &url.URL{Path: "/devices/thermostats"}
-	u := client.baseURL.ResolveReference(rel)
+	u := &url.URL{Path: "/devices/thermostats"}
 
 	return &ThermostatService{
 		client: client,
@@ -54,9 +53,9 @@ func NewThermostatService(client *Client) *ThermostatService {
 // SetTargetTemperature changes the target temperature on the Thermostat.
 // See https://developers.nest.com/guides/thermostat-guide#target_temperature
 //
-func (svc *ThermostatService) SetTargetTemperature(deviceid string, scale tempScale, target float64) error {
+func (svc *ThermostatService) SetTargetTemperature(deviceid string, scale tempScale, target int) error {
 	ttKey := fmt.Sprintf("target_temperature_%s", strings.ToLower(string(scale)))
-	return svc.requestWithValues(http.MethodPut, svc.apiURL.String()+deviceid, values{ttKey: target})
+	return svc.requestWithValues(http.MethodPut, deviceid, values{ttKey: target})
 }
 
 // SetTargetTemperatureRange changes the target temperature on the Thermostat with a given range.
@@ -64,11 +63,11 @@ func (svc *ThermostatService) SetTargetTemperature(deviceid string, scale tempSc
 // target_temperature_low(f|c)
 // target_temperature_high(f|c)
 //
-func (svc *ThermostatService) SetTargetTemperatureRange(deviceid string, scale tempScale, low float64, high float64) error {
+func (svc *ThermostatService) SetTargetTemperatureRange(deviceid string, scale tempScale, low, high int) error {
 	s := strings.ToLower(string(scale))
 	values := map[string]interface{}{}
 
-	if low == 0.0 && high == 0.0 {
+	if low == 0 && high == 0 {
 		return errors.New("either low or high target must be set above 0")
 	}
 	if low >= high {
@@ -81,7 +80,7 @@ func (svc *ThermostatService) SetTargetTemperatureRange(deviceid string, scale t
 	highKey := fmt.Sprintf("target_temperature_high_%s", s)
 	values[highKey] = high
 
-	return svc.requestWithValues(http.MethodPut, svc.apiURL.String()+deviceid, values)
+	return svc.requestWithValues(http.MethodPut, deviceid, values)
 }
 
 // SetHVACMode sets thermostat to the given mode. Current modes supported: (heat, cool, heat-cool, eco, off)
@@ -91,7 +90,7 @@ func (svc *ThermostatService) SetTargetTemperatureRange(deviceid string, scale t
 // See https://developers.nest.com/reference/api-thermostat#hvac_mode
 //
 func (svc *ThermostatService) SetHVACMode(deviceid string, state hvacMode) error {
-	return svc.requestWithValues(http.MethodPut, svc.apiURL.String()+deviceid, values{"hvac_mode": state})
+	return svc.requestWithValues(http.MethodPut, deviceid, values{"hvac_mode": state})
 }
 
 // SetFanTimerDuration specifies the length of time (in minutes) that the fan is set to run.
@@ -101,7 +100,7 @@ func (svc *ThermostatService) SetFanTimerDuration(deviceid string, duration int)
 	if duration%15 != 0 {
 		return errors.New("duration must be a multiple of 15")
 	}
-	return svc.requestWithValues(http.MethodPut, svc.apiURL.String()+deviceid, values{"fan_timer_duration": duration})
+	return svc.requestWithValues(http.MethodPut, deviceid, values{"fan_timer_duration": duration})
 }
 
 // GetFanTimerActive indicates if the fan timer is engaged. This is typically set with SetFanTimerDuration
@@ -114,12 +113,12 @@ func (svc *ThermostatService) GetFanTimerActive(deviceid string) error {
 // SetLabel sets a custom label for a thermostat.
 // See https://developers.nest.com/reference/api-thermostat#label
 func (svc *ThermostatService) SetLabel(deviceid string, label string) error {
-	return svc.requestWithValues(http.MethodPut, svc.apiURL.String()+deviceid, values{"label": label})
+	return svc.requestWithValues(http.MethodPut, deviceid, values{"label": label})
 }
 
 // SetTemperatureScale sets the temperature scale display to F or C.
 func (svc *ThermostatService) SetTemperatureScale(deviceid string, scale tempScale) error {
-	return svc.requestWithValues(http.MethodPut, svc.apiURL.String()+deviceid, values{"temperature_scale": scale})
+	return svc.requestWithValues(http.MethodPut, deviceid, values{"temperature_scale": scale})
 }
 
 // Get fetches an updated thermostat object given a deviceID.
@@ -136,14 +135,16 @@ func (svc *ThermostatService) Get(deviceid string) (*device.Thermostat, error) {
 // https://developers.nest.com/guides/api/rest-streaming-guide
 //
 func (svc *ThermostatService) Stream(deviceID string) (*Stream, error) {
-	rel := &url.URL{Path: fmt.Sprintf("/devices/thermostats/%s", deviceID)}
+	rel := &url.URL{Path: fmt.Sprintf("%s/%s", svc.apiURL, deviceID)}
 	return NewStream(&config.Config{
 		APIURL: svc.client.baseURL.ResolveReference(rel).String(),
 	}, svc.client.httpClient)
 }
 
 func (svc *ThermostatService) requestWithValues(method string, path string, values map[string]interface{}) error {
-	req, err := svc.client.newRequest(method, path, values)
+	url := fmt.Sprintf("%s/%s", svc.apiURL.String(), path)
+	req, err := svc.client.newRequest(method, url, values)
+
 	if err != nil {
 		return err
 	}
