@@ -353,7 +353,7 @@ func Test_NewClientAPIUrl(t *testing.T) {
 		err error
 	}{
 		{"http://localhost", nil},
-		{"()://", errors.New("Not a properly formed API URL: parse ()://: first path segment in URL cannot contain colon")},
+		{"()://", errors.New("Not a properly formed API URL: parse \"()://\": first path segment in URL cannot contain colon")},
 	}
 
 	for _, tc := range tt {
