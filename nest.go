@@ -44,7 +44,7 @@ func (e Error) Error() string {
 func NewClient(config config.Config, client *http.Client) (*Client, error) {
 	url, err := url.Parse(config.APIURL)
 	if err != nil {
-		return nil, fmt.Errorf("Not a properly formed API URL: %v", err)
+		return nil, fmt.Errorf("not a properly formed API URL: %v", err)
 	}
 	c := &Client{
 		baseURL:    url,
