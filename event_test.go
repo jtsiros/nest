@@ -17,7 +17,7 @@ import (
 
 func createHandler(body string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		io.WriteString(w, body)
+		_, _ = io.WriteString(w, body)
 	}
 }
 

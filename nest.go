@@ -13,8 +13,8 @@ import (
 )
 
 type service struct {
-	client *Client
-	apiURL *url.URL
+	client *Client //nolint
+	apiURL *url.URL //nolint
 }
 
 // Client provides API functionality to Nest APIs
@@ -112,7 +112,9 @@ func (nest *Client) do(req *http.Request, v interface{}) (*http.Response, error)
 	}
 	if resp.StatusCode != http.StatusOK {
 		var err Error
-		json.NewDecoder(resp.Body).Decode(&err)
+		if err := json.NewDecoder(resp.Body).Decode(&err); err != nil {
+			return nil, err
+		}
 		return nil, err
 	}
 	if v != nil {

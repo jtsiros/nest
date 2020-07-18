@@ -83,15 +83,15 @@ func (e Event) GetEvent() (EventsType, string, interface{}, error) {
 	switch eventType {
 	case Thermostats:
 		thermostatDataBuf := thermostatData{}
-		json.Unmarshal(e.data, &thermostatDataBuf)
+		_ = json.Unmarshal(e.data, &thermostatDataBuf)
 		deviceData = thermostatDataBuf.Data
 	case SmokeCoAlarms:
 		smokeCoAlarmDataBuf := smokeCoAlarmData{}
-		json.Unmarshal(e.data, &smokeCoAlarmDataBuf)
+		_ = json.Unmarshal(e.data, &smokeCoAlarmDataBuf)
 		deviceData = smokeCoAlarmDataBuf.Data
 	case Cameras:
 		cameraDataBuf := cameraData{}
-		json.Unmarshal(e.data, &cameraDataBuf)
+		_ = json.Unmarshal(e.data, &cameraDataBuf)
 		deviceData = cameraDataBuf.Data
 	default:
 		return EventError, "", nil, fmt.Errorf("unhandled device type: %v", eventType)
@@ -175,7 +175,7 @@ func (s Stream) createConnection() (*http.Response, error) {
 
 	resp, err := s.client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("Could not connect to API: %v", err)
+		return nil, fmt.Errorf("could not connect to API: %v", err)
 	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("expected status code %d, got %d", http.StatusOK, resp.StatusCode)
