@@ -331,7 +331,7 @@ func Test_ListOfDevices(t *testing.T) {
 	}
 
 	for _, tc := range tt {
-		api, err := NewClient(config.Config{APIURL: tc.s.URL}, tc.s.Client())
+		api, _ := NewClient(config.Config{APIURL: tc.s.URL}, tc.s.Client())
 		devices, err := api.Devices()
 		if tc.err != nil {
 			if err == nil {
